@@ -31,13 +31,6 @@ const MenuPage = async () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <Link
-        href="/"
-        className="fixed left-4 top-4 z-50 flex items-center gap-2 rounded-full bg-card/80 px-4 py-2 text-sm font-medium text-foreground shadow-md backdrop-blur transition hover:bg-card"
-      >
-        <ArrowRight className="h-4 w-4" />
-        <span className="persian-text text-sm">بازگشت</span>
-      </Link>
 
       <CoffeeHero />
 
