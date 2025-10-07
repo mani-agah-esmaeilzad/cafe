@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   پالت رنگی جدید: تم گرم شیری و شکلاتی
+   ==========================================================================
+*/
+
+@layer base {
+  :root {
+    /* ----- حالت روشن (Light Mode) با پس‌زمینه شیری ----- */
+    --background: 30 25% 96%;             /* رنگ شیری برای پس‌زمینه اصلی */
+    --foreground: 20 15% 10%;            /* تقریباً مشکی برای متن اصلی */
+    
+    --card: 0 0% 100%;                     /* سفید خالص برای کارت‌ها جهت ایجاد تضاد */
+    --card-foreground: 20 15% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 15% 10%;
+
+    --primary: 25 45% 35%;               /* قهوه‌ای شکلاتی غلیظ برای دکمه‌ها */
+    --primary-foreground: 30 25% 96%;    /* متن شیری برای روی دکمه‌های شکلاتی */
+
+    --secondary: 30 15% 93%;             /* رنگ شیری کمی تیره‌تر برای پس‌زمینه‌های ثانویه */
+    --secondary-foreground: 20 15% 10%;
+
+    --muted: 30 15% 90%;
+    --muted-foreground: 20 15% 40%;      /* خاکستری گرم برای متن‌های کم‌اهمیت */
+
+    --accent: 25 45% 40%;                /* نسخه کمی روشن‌تر از شکلاتی برای تأکید */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 15% 90%;
+    --input: 30 15% 90%;
+    --ring: 25 45% 35%;
+
+    --radius: 0.75rem;
+
+    /* متغیرهای سفارشی برای گرادینت و سایه */
+    --gradient-main: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--background)));
+    --gradient-background: linear-gradient(180deg, hsl(var(--background)), hsl(var(--card)));
+    --gradient-accent: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent)));
+    
+    --shadow-main: 0 10px 30px -10px hsl(var(--primary) / 0.2);
+    --shadow-glow: 0 0 40px hsl(var(--primary) / 0.25);
+
+    /* Coffee theme tokens shared with the cafe menu */
+    --coffee-dark: 25 45% 20%;
+    --coffee-medium: 30 35% 30%;
+    --coffee-light: 35 25% 50%;
+    --coffee-cream: 45 30% 92%;
+    --coffee-beans: 20 35% 12%;
+    --coffee-latte: 35 35% 70%;
+    --coffee-espresso: 20 45% 18%;
+
+    --gradient-coffee: linear-gradient(135deg, hsl(var(--coffee-beans)), hsl(var(--coffee-dark)));
+    --gradient-dark: linear-gradient(180deg, hsl(var(--coffee-dark)), hsl(var(--coffee-beans)));
+    --gradient-gold: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
+
+    --shadow-warm: 0 10px 30px -10px hsl(var(--coffee-dark) / 0.3);
+    --shadow-coffee: 0 4px 18px hsl(var(--primary) / 0.25);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    /* ----- حالت تیره (Dark Mode) ----- */
+    --background: 20 15% 10%;
+    --foreground: 0 0% 98%;
+    --card: 25 15% 14%;
+    --card-foreground: 0 0% 98%;
+    --popover: 20 15% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 30 25% 96%;
+    --primary-foreground: 20 15% 10%;
+    --secondary: 25 15% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 25 15% 14%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 30 25% 90%;
+    --accent-foreground: 20 15% 10%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 25 15% 20%;
+    --input: 25 15% 20%;
+    --ring: 30 25% 96%;
+
+    --coffee-dark: 20 40% 12%;
+    --coffee-medium: 28 30% 22%;
+    --coffee-light: 35 22% 32%;
+    --coffee-cream: 40 30% 85%;
+    --coffee-beans: 15 35% 8%;
+    --coffee-latte: 33 30% 55%;
+    --coffee-espresso: 18 45% 15%;
+
+    --gradient-coffee: linear-gradient(135deg, hsl(var(--coffee-beans)), hsl(var(--coffee-dark)));
+    --gradient-dark: linear-gradient(180deg, hsl(var(--coffee-dark)), hsl(var(--coffee-beans)));
+    --gradient-gold: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
+
+    --shadow-warm: 0 10px 30px -10px hsl(var(--coffee-dark) / 0.35);
+    --shadow-coffee: 0 4px 18px hsl(var(--coffee-cream) / 0.25);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-vazir), 'Vazir', 'Tahoma', sans-serif;
+    direction: rtl;
+  }
+
+  .persian-text {
+    font-family: var(--font-vazir), 'Vazir', 'Tahoma', sans-serif;
+    direction: rtl;
+    text-align: center;
+  }
+  
+  .arabic-text {
+    font-family: 'Amiri', 'Times New Roman', serif;
+    direction: rtl;
+    text-align: center;
+  }
+
+  .coffee-hero {
+    background: var(--gradient-coffee);
+    background-attachment: fixed;
+  }
+
+  .coffee-card {
+    transition: var(--transition-smooth);
+    box-shadow: var(--shadow-warm);
+  }
+
+  .coffee-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-coffee);
+  }
+
+  .price-badge {
+    background: var(--gradient-gold);
+    transition: var(--transition-bounce);
+  }
+
+  .social-icon {
+    background: hsl(var(--primary));
+    transition: var(--transition-smooth);
+  }
+
+  .social-icon:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-warm);
+  }
+
+}
+
+@layer components {
+  .logo-glow {
+    filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.4));
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .logo-glow:hover {
+    filter: drop-shadow(0 0 30px hsl(var(--primary) / 0.6));
+    transform: scale(1.05);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
