@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 type MenuItem = {
   id: number;
@@ -46,6 +47,7 @@ const AdminMenuManager = () => {
   const [formState, setFormState] = useState(emptyFormState);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
@@ -134,6 +136,43 @@ const AdminMenuManager = () => {
 
   const allItems = useMemo(() => categories.flatMap((category) => category.items), [categories]);
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      if (!file.type.startsWith("image/")) {
+        throw new Error("لطفاً فقط فایل تصویری انتخاب کنید.");
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "آپلود تصویر ناموفق بود.");
+      }
+
+      const { url } = (await response.json()) as { url: string };
+      setFormState((prev) => ({ ...prev, imageUrl: url }));
+      toast({ title: "تصویر با موفقیت آپلود شد" });
+    } catch (error) {
+      toast({
+        title: "خطا در آپلود",
+        description: error instanceof Error ? error.message : "آپلود تصویر ناموفق بود.",
+      });
+    } finally {
+      setIsUploading(false);
+      event.target.value = "";
+    }
+  };
+
   return (
     <div className="space-y-8">
       <Card>
@@ -178,10 +217,46 @@ const AdminMenuManager = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="persian-text text-sm text-muted-foreground" htmlFor="imageUrl">
-                لینک تصویر (اختیاری)
-              </label>
-              <Input id="imageUrl" name="imageUrl" value={formState.imageUrl} onChange={handleInputChange} dir="ltr" />
+              <span className="persian-text text-sm text-muted-foreground">تصویر محصول</span>
+              <div className="flex items-center gap-3">
+                <Button type="button" variant="outline" disabled={isUploading}>
+                  <label className="cursor-pointer">
+                    <span>{isUploading ? "در حال آپلود..." : "انتخاب تصویر"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                  </label>
+                </Button>
+                {formState.imageUrl ? (
+                  <span className="text-xs text-muted-foreground break-all" dir="ltr">
+                    {formState.imageUrl}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">فعلاً تصویری انتخاب نشده است</span>
+                )}
+              </div>
+              {formState.imageUrl ? (
+                <div className="h-24 w-24 overflow-hidden rounded-lg border border-border">
+                  <Image
+                    src={formState.imageUrl}
+                    alt="پیش‌نمایش"
+                    width={96}
+                    height={96}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ) : null}
+              <Input
+                id="imageUrl"
+                name="imageUrl"
+                value={formState.imageUrl}
+                onChange={handleInputChange}
+                placeholder="یا لینک دلخواه تصویر را وارد کنید"
+                dir="ltr"
+              />
             </div>
             <div className="space-y-2">
               <label className="persian-text text-sm text-muted-foreground" htmlFor="priceSingle">

@@ -1,10 +1,12 @@
 {
   "/api/admin/login/route": "/api/admin/login",
-  "/api/admin/logout/route": "/api/admin/logout",
   "/_not-found/page": "/_not-found",
+  "/api/admin/logout/route": "/api/admin/logout",
   "/api/admin/me/route": "/api/admin/me",
-  "/api/menu/route": "/api/menu",
   "/api/menu/[id]/route": "/api/menu/[id]",
+  "/api/menu/route": "/api/menu",
+  "/api/upload/route": "/api/upload",
+  "/api/ai/recommend/route": "/api/ai/recommend",
   "/admin/page": "/admin",
   "/page": "/",
   "/menu/page": "/menu"
