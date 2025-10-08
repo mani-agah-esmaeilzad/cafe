@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 60;
 
-const modelName = "gemini-2.5-flash";
+const modelName = "google/gemini-2.5-flash-lite";
 
 const buildMenuContext = (menu: { name: string; description?: string | null; items: { persianName: string; englishName?: string | null; description?: string | null; priceSingle?: number | null; priceDouble?: number | null; }[]; }[]) => {
   return menu
