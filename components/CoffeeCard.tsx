@@ -1,30 +1,27 @@
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 
+type PriceOptionDisplay = {
+  label: string;
+  price: string;
+};
+
 interface CoffeeCardProps {
   image?: string | null;
   persianName: string;
   englishName?: string;
-  singlePrice?: string;
-  doublePrice?: string;
+  options?: PriceOptionDisplay[];
   description?: string;
 }
 
-const CoffeeCard = ({ 
-  image, 
-  persianName, 
-  englishName, 
-  singlePrice, 
-  doublePrice, 
-  description 
-}: CoffeeCardProps) => {
+const CoffeeCard = ({ image, persianName, englishName, options, description }: CoffeeCardProps) => {
+  const hasOptions = options && options.length > 0;
+
   return (
-    <Card className="coffee-card border-0 bg-card transition-all duration-300 shadow-sm hover:shadow-md">
+    <Card className="coffee-card border-0 bg-card shadow-sm transition-all duration-300 hover:shadow-md">
       <CardContent className="p-4 md:p-6">
-        {/* Mobile/Tablet optimized layout */}
         <div className="flex items-start gap-4">
-          {/* Coffee Image */}
-          <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-full bg-accent/10 md:h-24 md:w-24">
+          <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-accent/10 md:h-24 md:w-24">
             {image ? (
               <Image
                 src={image}
@@ -41,44 +38,32 @@ const CoffeeCard = ({
               </div>
             )}
           </div>
-          
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 md:gap-4">
-              {/* Title & English Name */}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div className="text-right">
-                <h3 className="text-lg md:text-xl font-bold text-foreground mb-1">
-                  {persianName}
-                </h3>
+                <h3 className="mb-1 text-lg font-bold text-foreground md:text-xl">{persianName}</h3>
                 {englishName ? (
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {englishName}
-                  </p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{englishName}</p>
                 ) : null}
               </div>
-              
-              {/* Prices */}
-              {(singlePrice || doublePrice) ? (
-                <div className="flex gap-2 flex-shrink-0">
-                  {singlePrice ? (
-                    <div className="text-center min-w-0">
-                      <p className="text-xs text-muted-foreground">تک شات</p>
-                      <p className="font-bold text-sm text-coffee-dark">{singlePrice}</p>
-                    </div>
-                  ) : null}
-                  {doublePrice ? (
-                    <div className="text-center min-w-0">
-                      <p className="text-xs text-muted-foreground">جفت شات</p>
-                      <p className="font-bold text-sm text-coffee-dark">{doublePrice}</p>
-                    </div>
-                  ) : null}
+
+              {hasOptions ? (
+                <div className="flex flex-wrap justify-end gap-2 md:justify-start">
+                  {options!.map((option, index) => (
+                    <span
+                      key={`${option.label}-${index}`}
+                      className="price-badge rounded-full px-3 py-1 text-xs font-medium text-foreground"
+                    >
+                      {option.label}: {option.price} ریال
+                    </span>
+                  ))}
                 </div>
               ) : null}
             </div>
-            
-            {/* Description */}
+
             {description ? (
-              <p className="text-xs text-muted-foreground leading-relaxed mt-3 text-right">
+              <p className="persian-text mt-3 text-xs leading-relaxed text-muted-foreground md:text-sm">
                 {description}
               </p>
             ) : null}

@@ -19,6 +19,7 @@ model MenuCategory {
   id          Int         @id @default(autoincrement())
   name        String      @unique
   description String?
+  imageUrl    String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   items       MenuItem[]
@@ -30,11 +31,18 @@ model MenuItem {
   englishName  String?
   description  String?
   imageUrl     String?
-  priceSingle  Int?
-  priceDouble  Int?
   isAvailable  Boolean       @default(true)
   categoryId   Int?
   category     MenuCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  options      MenuItemOption[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+}
+
+model MenuItemOption {
+  id         Int      @id @default(autoincrement())
+  label      String
+  price      Int
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
 }

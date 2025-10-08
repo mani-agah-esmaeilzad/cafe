@@ -3,24 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { getAdminFromRequest } from "@/lib/auth";
 import { z } from "zod";
 
+const priceOptionSchema = z.object({
+  label: z.string().min(1, "نام گزینه الزامی است."),
+  price: z
+    .number()
+    .int()
+    .nonnegative(),
+});
+
 const menuItemSchema = z.object({
   persianName: z.string().min(1, "نام فارسی الزامی است."),
   englishName: z.string().optional(),
   description: z.string().optional(),
   imageUrl: z.string().url().or(z.literal("")).optional(),
-  priceSingle: z
-    .number()
-    .int()
-    .nonnegative()
-    .optional(),
-  priceDouble: z
-    .number()
-    .int()
-    .nonnegative()
-    .optional(),
   isAvailable: z.boolean().optional(),
   categoryId: z.number().int().positive().optional(),
   categoryName: z.string().min(1).optional(),
+  categoryImageUrl: z.string().url().or(z.literal("")).optional(),
+  priceOptions: z.array(priceOptionSchema).optional(),
 });
 
 export async function GET() {
@@ -29,6 +29,11 @@ export async function GET() {
     include: {
       items: {
         orderBy: { createdAt: "asc" },
+        include: {
+          options: {
+            orderBy: { id: "asc" },
+          },
+        },
       },
     },
   });
@@ -43,32 +48,51 @@ export async function POST(request: NextRequest) {
   }
 
   const raw = await request.json();
-  const parsed = menuItemSchema.safeParse({
+  const normalizedPayload = {
     ...raw,
-    priceSingle: raw.priceSingle !== undefined && raw.priceSingle !== null && raw.priceSingle !== ""
-      ? Number(raw.priceSingle)
-      : undefined,
-    priceDouble: raw.priceDouble !== undefined && raw.priceDouble !== null && raw.priceDouble !== ""
-      ? Number(raw.priceDouble)
-      : undefined,
     categoryId: raw.categoryId ? Number(raw.categoryId) : undefined,
-  });
+    priceOptions: Array.isArray(raw.priceOptions)
+      ? raw.priceOptions
+          .map((option: any) => ({
+            label: typeof option?.label === "string" ? option.label.trim() : "",
+            price:
+              option?.price !== undefined && option?.price !== null && option?.price !== ""
+                ? Number(option.price)
+                : undefined,
+          }))
+          .filter(
+            (option: { label: string; price: number | undefined }) =>
+              option.label && typeof option.price === "number" && !Number.isNaN(option.price)
+          )
+      : undefined,
+  };
+
+  const parsed = menuItemSchema.safeParse(normalizedPayload);
 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { categoryName, categoryId, ...itemData } = parsed.data;
+  const { categoryName, categoryId, categoryImageUrl, priceOptions, ...itemData } = parsed.data;
+
+  if (!priceOptions || !priceOptions.length) {
+    return NextResponse.json({ error: "حداقل یک گزینه قیمت‌گذاری الزامی است." }, { status: 400 });
+  }
 
   let resolvedCategoryId = categoryId;
 
   if (!resolvedCategoryId && categoryName) {
     const category = await prisma.menuCategory.upsert({
       where: { name: categoryName },
-      update: {},
-      create: { name: categoryName },
+      update: categoryImageUrl ? { imageUrl: categoryImageUrl } : {},
+      create: { name: categoryName, imageUrl: categoryImageUrl },
     });
     resolvedCategoryId = category.id;
+  } else if (resolvedCategoryId && categoryImageUrl) {
+    await prisma.menuCategory.update({
+      where: { id: resolvedCategoryId },
+      data: { imageUrl: categoryImageUrl },
+    });
   }
 
   const menuItem = await prisma.menuItem.create({
@@ -78,5 +102,18 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json({ item: menuItem }, { status: 201 });
+  await prisma.menuItemOption.createMany({
+    data: priceOptions.map((option) => ({
+      menuItemId: menuItem.id,
+      label: option.label,
+      price: option.price,
+    })),
+  });
+
+  const itemWithOptions = await prisma.menuItem.findUnique({
+    where: { id: menuItem.id },
+    include: { options: { orderBy: { id: "asc" } } },
+  });
+
+  return NextResponse.json({ item: itemWithOptions }, { status: 201 });
 }

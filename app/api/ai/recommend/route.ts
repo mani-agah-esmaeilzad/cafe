@@ -6,15 +6,28 @@ export const maxDuration = 60;
 
 const modelName = "gemini-2.5-flash-lite";
 
-const buildMenuContext = (menu: { name: string; description?: string | null; items: { persianName: string; englishName?: string | null; description?: string | null; priceSingle?: number | null; priceDouble?: number | null; }[]; }[]) => {
+const buildMenuContext = (
+  menu: {
+    name: string;
+    description?: string | null;
+    items: {
+      persianName: string;
+      englishName?: string | null;
+      description?: string | null;
+      options: { label: string; price: number }[];
+    }[];
+  }[],
+) => {
   return menu
     .map((category) => {
       const items = category.items
         .map((item) => {
-          const prices: string[] = [];
-          if (item.priceSingle) prices.push(`تک‌شات ${item.priceSingle.toLocaleString("fa-IR")} ریال`);
-          if (item.priceDouble) prices.push(`دبل‌شات ${item.priceDouble.toLocaleString("fa-IR")} ریال`);
-          return `- ${item.persianName}${item.englishName ? ` (${item.englishName})` : ""}${prices.length ? ` | ${prices.join(" / ")}` : ""}${item.description ? `\n  توضیحات: ${item.description}` : ""}`;
+          const prices = item.options?.length
+            ? item.options.map((option) => `${option.label}: ${option.price.toLocaleString("fa-IR")} ریال`)
+            : [];
+          return `- ${item.persianName}${item.englishName ? ` (${item.englishName})` : ""}${
+            prices.length ? ` | ${prices.join(" / ")}` : ""
+          }${item.description ? `\n  توضیحات: ${item.description}` : ""}`;
         })
         .join("\n");
 
@@ -41,6 +54,11 @@ export async function POST(request: NextRequest) {
       items: {
         where: { isAvailable: true },
         orderBy: { createdAt: "asc" },
+        include: {
+          options: {
+            orderBy: { id: "asc" },
+          },
+        },
       },
     },
   });

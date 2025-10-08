@@ -1,7 +1,7 @@
 {
-  "/api/admin/login/route": "/api/admin/login",
   "/_not-found/page": "/_not-found",
   "/api/admin/logout/route": "/api/admin/logout",
+  "/api/admin/login/route": "/api/admin/login",
   "/api/admin/me/route": "/api/admin/me",
   "/api/menu/[id]/route": "/api/menu/[id]",
   "/api/menu/route": "/api/menu",

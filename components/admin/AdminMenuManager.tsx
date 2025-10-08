@@ -1,14 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import Image from "next/image";
+
+type MenuItemOption = {
+  id: number;
+  label: string;
+  price: number;
+};
 
 type MenuItem = {
   id: number;
@@ -16,16 +21,16 @@ type MenuItem = {
   englishName?: string | null;
   description?: string | null;
   imageUrl?: string | null;
-  priceSingle?: number | null;
-  priceDouble?: number | null;
   isAvailable: boolean;
   categoryId?: number | null;
+  options: MenuItemOption[];
 };
 
 type MenuCategory = {
   id: number;
   name: string;
   description?: string | null;
+  imageUrl?: string | null;
   items: MenuItem[];
 };
 
@@ -33,21 +38,37 @@ type MenuResponse = {
   categories: MenuCategory[];
 };
 
-const emptyFormState = {
+type PriceOptionForm = {
+  label: string;
+  price: string;
+};
+
+type FormState = {
+  persianName: string;
+  englishName: string;
+  description: string;
+  imageUrl: string;
+  categoryName: string;
+  categoryImageUrl: string;
+  priceOptions: PriceOptionForm[];
+};
+
+const createEmptyFormState = (): FormState => ({
   persianName: "",
   englishName: "",
   description: "",
   imageUrl: "",
-  priceSingle: "",
-  priceDouble: "",
   categoryName: "",
-};
+  categoryImageUrl: "",
+  priceOptions: [{ label: "سایز", price: "" }],
+});
 
 const AdminMenuManager = () => {
-  const [formState, setFormState] = useState(emptyFormState);
+  const [formState, setFormState] = useState<FormState>(createEmptyFormState);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingItemImage, setIsUploadingItemImage] = useState(false);
+  const [isUploadingCategoryImage, setIsUploadingCategoryImage] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
@@ -79,18 +100,112 @@ const AdminMenuManager = () => {
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
+  const updatePriceOption = (index: number, key: keyof PriceOptionForm, value: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      priceOptions: prev.priceOptions.map((option, idx) => (idx === index ? { ...option, [key]: value } : option)),
+    }));
+  };
+
+  const addPriceOption = () => {
+    setFormState((prev) => ({
+      ...prev,
+      priceOptions: [...prev.priceOptions, { label: "", price: "" }],
+    }));
+  };
+
+  const removePriceOption = (index: number) => {
+    setFormState((prev) => ({
+      ...prev,
+      priceOptions: prev.priceOptions.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const uploadImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      throw new Error("لطفاً فقط فایل تصویری انتخاب کنید.");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error ?? "آپلود تصویر ناموفق بود.");
+    }
+
+    const { url } = (await response.json()) as { url: string };
+    return url;
+  };
+
+  const handleItemImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingItemImage(true);
+    try {
+      const url = await uploadImage(file);
+      setFormState((prev) => ({ ...prev, imageUrl: url }));
+      toast({ title: "تصویر محصول با موفقیت آپلود شد" });
+    } catch (error) {
+      toast({
+        title: "خطا در آپلود",
+        description: error instanceof Error ? error.message : "آپلود تصویر ناموفق بود.",
+      });
+    } finally {
+      setIsUploadingItemImage(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleCategoryImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingCategoryImage(true);
+    try {
+      const url = await uploadImage(file);
+      setFormState((prev) => ({ ...prev, categoryImageUrl: url }));
+      toast({ title: "تصویر دسته‌بندی با موفقیت آپلود شد" });
+    } catch (error) {
+      toast({
+        title: "خطا در آپلود",
+        description: error instanceof Error ? error.message : "آپلود تصویر ناموفق بود.",
+      });
+    } finally {
+      setIsUploadingCategoryImage(false);
+      event.target.value = "";
+    }
+  };
+
   const handleCreateItem = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     try {
+      const priceOptions = formState.priceOptions
+        .map((option) => ({
+          label: option.label.trim(),
+          price: option.price ? Number(option.price) : NaN,
+        }))
+        .filter((option) => option.label && !Number.isNaN(option.price));
+
+      if (!priceOptions.length) {
+        throw new Error("حداقل یک گزینه قیمت‌گذاری معتبر وارد کنید.");
+      }
+
       const payload = {
         persianName: formState.persianName,
         englishName: formState.englishName || undefined,
         description: formState.description || undefined,
         imageUrl: formState.imageUrl || undefined,
-        priceSingle: formState.priceSingle ? Number(formState.priceSingle) : undefined,
-        priceDouble: formState.priceDouble ? Number(formState.priceDouble) : undefined,
         categoryName: formState.categoryName || undefined,
+        categoryImageUrl: formState.categoryImageUrl || undefined,
+        priceOptions,
       };
 
       const response = await fetch("/api/menu", {
@@ -105,7 +220,7 @@ const AdminMenuManager = () => {
       }
 
       toast({ title: "آیتم جدید اضافه شد." });
-      setFormState(emptyFormState);
+      setFormState(createEmptyFormState());
       await fetchMenu();
     } catch (error) {
       toast({
@@ -135,43 +250,6 @@ const AdminMenuManager = () => {
   };
 
   const allItems = useMemo(() => categories.flatMap((category) => category.items), [categories]);
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      if (!file.type.startsWith("image/")) {
-        throw new Error("لطفاً فقط فایل تصویری انتخاب کنید.");
-      }
-
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error ?? "آپلود تصویر ناموفق بود.");
-      }
-
-      const { url } = (await response.json()) as { url: string };
-      setFormState((prev) => ({ ...prev, imageUrl: url }));
-      toast({ title: "تصویر با موفقیت آپلود شد" });
-    } catch (error) {
-      toast({
-        title: "خطا در آپلود",
-        description: error instanceof Error ? error.message : "آپلود تصویر ناموفق بود.",
-      });
-    } finally {
-      setIsUploading(false);
-      event.target.value = "";
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -217,17 +295,53 @@ const AdminMenuManager = () => {
               />
             </div>
             <div className="space-y-2">
+              <span className="persian-text text-sm text-muted-foreground">تصویر دسته‌بندی</span>
+              <div className="flex items-center gap-3">
+                <Button type="button" variant="outline" disabled={isUploadingCategoryImage}>
+                  <label className="cursor-pointer">
+                    <span>{isUploadingCategoryImage ? "در حال آپلود..." : "انتخاب تصویر"}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleCategoryImageUpload} />
+                  </label>
+                </Button>
+                {formState.categoryImageUrl ? (
+                  <span className="text-xs text-muted-foreground break-all" dir="ltr">
+                    {formState.categoryImageUrl}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">می‌توانید برای دسته‌بندی تصویر انتخاب کنید</span>
+                )}
+              </div>
+              {formState.categoryImageUrl ? (
+                <div className="h-20 w-20 overflow-hidden rounded-lg border border-border">
+                  <Image
+                    src={formState.categoryImageUrl}
+                    alt="پیش‌نمایش دسته‌بندی"
+                    width={80}
+                    height={80}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ) : null}
+            </div>
+            <div className="md:col-span-2 space-y-2">
+              <label className="persian-text text-sm text-muted-foreground" htmlFor="description">
+                توضیحات
+              </label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formState.description}
+                onChange={handleInputChange}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
               <span className="persian-text text-sm text-muted-foreground">تصویر محصول</span>
               <div className="flex items-center gap-3">
-                <Button type="button" variant="outline" disabled={isUploading}>
+                <Button type="button" variant="outline" disabled={isUploadingItemImage}>
                   <label className="cursor-pointer">
-                    <span>{isUploading ? "در حال آپلود..." : "انتخاب تصویر"}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                    />
+                    <span>{isUploadingItemImage ? "در حال آپلود..." : "انتخاب تصویر"}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleItemImageUpload} />
                   </label>
                 </Button>
                 {formState.imageUrl ? (
@@ -242,7 +356,7 @@ const AdminMenuManager = () => {
                 <div className="h-24 w-24 overflow-hidden rounded-lg border border-border">
                   <Image
                     src={formState.imageUrl}
-                    alt="پیش‌نمایش"
+                    alt="پیش‌نمایش محصول"
                     width={96}
                     height={96}
                     className="h-full w-full object-cover"
@@ -258,43 +372,40 @@ const AdminMenuManager = () => {
                 dir="ltr"
               />
             </div>
-            <div className="space-y-2">
-              <label className="persian-text text-sm text-muted-foreground" htmlFor="priceSingle">
-                قیمت تک‌شات (ریال)
-              </label>
-              <Input
-                id="priceSingle"
-                name="priceSingle"
-                value={formState.priceSingle}
-                onChange={handleInputChange}
-                dir="ltr"
-                inputMode="numeric"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="persian-text text-sm text-muted-foreground" htmlFor="priceDouble">
-                قیمت دبل‌شات (ریال)
-              </label>
-              <Input
-                id="priceDouble"
-                name="priceDouble"
-                value={formState.priceDouble}
-                onChange={handleInputChange}
-                dir="ltr"
-                inputMode="numeric"
-              />
-            </div>
-            <div className="md:col-span-2 space-y-2">
-              <label className="persian-text text-sm text-muted-foreground" htmlFor="description">
-                توضیحات
-              </label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formState.description}
-                onChange={handleInputChange}
-                rows={3}
-              />
+            <div className="md:col-span-2 space-y-3">
+              <label className="persian-text text-sm text-muted-foreground">گزینه‌های قیمت‌گذاری</label>
+              <div className="grid gap-3">
+                {formState.priceOptions.map((option, index) => (
+                  <div key={index} className="grid gap-2 rounded-lg border border-dashed border-border p-3 md:grid-cols-2">
+                    <Input
+                      placeholder="مثلاً: کوچک، متوسط، بزرگ"
+                      value={option.label}
+                      onChange={(event) => updatePriceOption(index, "label", event.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="قیمت (ریال)"
+                        value={option.price}
+                        inputMode="numeric"
+                        dir="ltr"
+                        onChange={(event) => updatePriceOption(index, "price", event.target.value.replace(/[^0-9]/g, ""))}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-destructive"
+                        disabled={formState.priceOptions.length === 1}
+                        onClick={() => removePriceOption(index)}
+                      >
+                        حذف
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button type="button" variant="outline" onClick={addPriceOption}>
+                افزودن گزینه جدید
+              </Button>
             </div>
             <div className="md:col-span-2">
               <Button className="persian-text" type="submit" disabled={isLoading}>
@@ -318,22 +429,36 @@ const AdminMenuManager = () => {
             <div className="space-y-6">
               {categories.map((category) => (
                 <div key={category.id} className="space-y-3">
-                  <div>
-                    <h3 className="persian-text text-lg font-semibold text-foreground">{category.name}</h3>
-                    {category.description ? (
-                      <p className="persian-text text-sm text-muted-foreground">{category.description}</p>
-                    ) : null}
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 overflow-hidden rounded-xl border border-border bg-muted/40">
+                      {category.imageUrl ? (
+                        <Image
+                          src={category.imageUrl}
+                          alt={category.name}
+                          width={48}
+                          height={48}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                          {category.name.at(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="persian-text text-lg font-semibold text-foreground">{category.name}</h3>
+                      {category.description ? (
+                        <p className="persian-text text-sm text-muted-foreground">{category.description}</p>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="space-y-4">
                     {category.items.map((item) => (
                       <div
                         key={item.id}
-                        className={cn(
-                          "rounded-xl border border-border bg-card/60 p-4 shadow-sm",
-                          !item.isAvailable && "opacity-70",
-                        )}
+                        className="rounded-xl border border-border bg-card/60 p-4 shadow-sm"
                       >
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                           <div>
                             <h4 className="persian-text text-lg font-semibold text-foreground">{item.persianName}</h4>
                             {item.englishName ? (
@@ -344,16 +469,17 @@ const AdminMenuManager = () => {
                             ) : null}
                           </div>
                           <div className="space-y-2 text-left">
-                            {item.priceSingle ? (
-                              <p className="persian-text text-sm">
-                                <span className="text-muted-foreground">تک‌شات:</span> {item.priceSingle.toLocaleString()}
-                              </p>
-                            ) : null}
-                            {item.priceDouble ? (
-                              <p className="persian-text text-sm">
-                                <span className="text-muted-foreground">دبل‌شات:</span> {item.priceDouble.toLocaleString()}
-                              </p>
-                            ) : null}
+                            {item.options.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {item.options.map((option) => (
+                                  <span key={option.id} className="price-badge rounded-full px-3 py-1 text-xs font-medium">
+                                    {option.label}: {option.price.toLocaleString("fa-IR")} ریال
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="persian-text text-xs text-muted-foreground">گزینه قیمت‌گذاری ثبت نشده است.</span>
+                            )}
                           </div>
                         </div>
                         <Separator className="my-4" />
