@@ -1,10 +1,10 @@
 {
   "version": 1,
   "functions": {
-    "/api/ai/recommend": {
+    "/api/upload": {
       "maxDuration": 60
     },
-    "/api/upload": {
+    "/api/ai/recommend": {
       "maxDuration": 60
     }
   }
