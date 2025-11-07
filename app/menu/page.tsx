@@ -34,7 +34,7 @@ const MenuPage = async () => {
   }));
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="min-h-screen bg-background">
 
       <CoffeeHero />
 

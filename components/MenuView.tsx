@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import CoffeeSidebar from "@/components/CoffeeSidebar";
 import CoffeeMenu from "@/components/CoffeeMenu";
 import MenuAssistant from "@/components/MenuAssistant";
+import AssistantIntroDialog from "@/components/AssistantIntroDialog";
 
 type MenuItemOption = {
   id: number;
@@ -34,6 +35,11 @@ type MenuViewProps = {
 
 const MenuView = ({ categories }: MenuViewProps) => {
   const [activeCategoryId, setActiveCategoryId] = useState<number | "all">("all");
+  const assistantSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToAssistant = () => {
+    assistantSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const filteredCategories =
     activeCategoryId === "all"
@@ -41,21 +47,24 @@ const MenuView = ({ categories }: MenuViewProps) => {
       : categories.filter((category) => category.id === activeCategoryId);
 
   return (
-    <div className="flex min-h-0 flex-1">
-      <CoffeeSidebar
-        categories={categories.map((category) => ({
-          id: category.id,
-          name: category.name,
-          imageUrl: category.imageUrl,
-        }))}
-        activeCategoryId={activeCategoryId}
-        onSelect={setActiveCategoryId}
-      />
-      <div className="flex-1 overflow-hidden">
-        <CoffeeMenu categories={filteredCategories} isFiltered={activeCategoryId !== "all"} />
-        <div className="px-3 pb-6 md:px-4 lg:px-6">
-          <MenuAssistant />
+    <div className="space-y-6 px-3 pb-6 md:px-4 lg:px-6">
+      <div className="flex w-full gap-4">
+        <CoffeeSidebar
+          categories={categories.map((category) => ({
+            id: category.id,
+            name: category.name,
+            imageUrl: category.imageUrl,
+          }))}
+          activeCategoryId={activeCategoryId}
+          onSelect={setActiveCategoryId}
+        />
+        <div className="flex-1">
+          <CoffeeMenu categories={filteredCategories} isFiltered={activeCategoryId !== "all"} />
         </div>
+      </div>
+      <AssistantIntroDialog onConfirm={scrollToAssistant} />
+      <div ref={assistantSectionRef} className="w-full">
+        <MenuAssistant />
       </div>
     </div>
   );

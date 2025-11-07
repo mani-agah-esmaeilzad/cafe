@@ -32,7 +32,7 @@ const CoffeeMenu = ({ categories, isFiltered = false }: CoffeeMenuProps) => {
   const noItems = categoriesToRender.length === 0;
 
   return (
-    <main className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6">
+    <main className="flex-1 p-3 md:p-4 lg:p-6">
       <div className="mx-auto flex max-w-4xl flex-col gap-8">
         {noItems ? (
           <p className="persian-text text-center text-muted-foreground">

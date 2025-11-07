@@ -17,25 +17,8 @@ type CoffeeSidebarProps = {
 
 const CoffeeSidebar = ({ categories, activeCategoryId, onSelect }: CoffeeSidebarProps) => {
   return (
-    <aside className="flex w-20 flex-shrink-0 flex-col border-l border-border bg-background/95 py-6 backdrop-blur-lg">
+    <aside className="sticky top-6 flex h-fit w-20 flex-shrink-0 flex-col border-l border-border bg-background/95 py-6 backdrop-blur-lg">
       <div className="flex flex-col items-center gap-5">
-        <button
-          onClick={() => onSelect("all")}
-          className={cn(
-            "group flex flex-col items-center gap-2 text-xs transition-all",
-            activeCategoryId === "all" ? "text-primary" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <div
-            className={cn(
-              "relative flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-card/70 transition-all duration-300",
-              activeCategoryId === "all" && "border-primary shadow-[0_0_0_3px_rgba(214,158,63,0.25)]"
-            )}
-          >
-            <span className="persian-text text-sm font-semibold">همه</span>
-          </div>
-          <span className="persian-text text-[11px]">همه</span>
-        </button>
         {categories.length === 0 ? (
           <span className="persian-text text-[11px] text-muted-foreground">بدون آیتم</span>
         ) : null}
