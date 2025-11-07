@@ -37,7 +37,7 @@ const FloatingAssistant = ({ open, onOpenChange }: FloatingAssistantProps) => {
         </span>
         <div className="text-right">
           <p className="persian-text text-sm font-semibold">باریستای هوشمند</p>
-          <p className="persian-text text-[11px] text-white/80">{open ? "در حال گفتگو" : "سوالی داری؟ بپرس!"}</p>
+          <p className="persian-text text-[11px] text-white/80">با ذائقه‌ات سفارش بده</p>
         </div>
       </button>
     </>
