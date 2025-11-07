@@ -79,11 +79,12 @@ const AdminMenuManager = () => {
   const [categoryForm, setCategoryForm] = useState<CategoryFormState>(createEmptyCategoryForm());
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [isFetching, setIsFetching] = useState(false);
-  const [isCreatingItem, setIsCreatingItem] = useState(false);
+  const [isSavingItem, setIsSavingItem] = useState(false);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isUploadingItemImage, setIsUploadingItemImage] = useState(false);
   const [isUploadingCategoryImage, setIsUploadingCategoryImage] = useState(false);
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const { toast } = useToast();
 
   const fetchMenu = useCallback(async () => {
@@ -117,6 +118,43 @@ const AdminMenuManager = () => {
   const handleCategoryFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setCategoryForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const resetItemForm = (presetCategoryId?: string) => {
+    setItemForm(createEmptyItemForm(presetCategoryId ? { categoryId: presetCategoryId } : undefined));
+  };
+
+  const getValidPriceOptions = () => {
+    return itemForm.priceOptions
+      .map((option) => ({
+        label: option.label.trim(),
+        price: option.price ? Number(option.price) : NaN,
+      }))
+      .filter((option) => option.label && !Number.isNaN(option.price));
+  };
+
+  const handleCancelEdit = () => {
+    resetItemForm();
+    setEditingItemId(null);
+  };
+
+  const handleSelectItemForEdit = (item: MenuItem, fallbackCategoryId?: number) => {
+    setEditingItemId(item.id);
+    setItemForm(
+      createEmptyItemForm({
+        persianName: item.persianName ?? "",
+        englishName: item.englishName ?? "",
+        description: item.description ?? "",
+        imageUrl: item.imageUrl ?? "",
+        categoryId: (item.categoryId ?? fallbackCategoryId ?? "").toString(),
+        priceOptions: item.options.length
+          ? item.options.map((option) => ({
+              label: option.label,
+              price: option.price.toString(),
+            }))
+          : [{ label: "", price: "" }],
+      }),
+    );
   };
 
   const updatePriceOption = (index: number, key: keyof PriceOptionForm, value: string) => {
@@ -268,7 +306,7 @@ const AdminMenuManager = () => {
     }
   };
 
-  const handleCreateItem = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveItem = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!itemForm.categoryId) {
@@ -276,22 +314,21 @@ const AdminMenuManager = () => {
       return;
     }
 
-    const priceOptions = itemForm.priceOptions
-      .map((option) => ({
-        label: option.label.trim(),
-        price: option.price ? Number(option.price) : NaN,
-      }))
-      .filter((option) => option.label && !Number.isNaN(option.price));
+    const priceOptions = getValidPriceOptions();
 
     if (!priceOptions.length) {
       toast({ title: "حداقل یک گزینه قیمت‌گذاری معتبر وارد کنید." });
       return;
     }
 
-    setIsCreatingItem(true);
+    const isEditing = Boolean(editingItemId);
+    const endpoint = isEditing ? `/api/menu/${editingItemId}` : "/api/menu";
+    const method = isEditing ? "PUT" : "POST";
+
+    setIsSavingItem(true);
     try {
-      const response = await fetch("/api/menu", {
-        method: "POST",
+      const response = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           persianName: itemForm.persianName,
@@ -305,19 +342,27 @@ const AdminMenuManager = () => {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error ?? "ثبت آیتم ناموفق بود.");
+        throw new Error(data.error ?? (isEditing ? "ویرایش آیتم ناموفق بود." : "ثبت آیتم ناموفق بود."));
       }
 
-      toast({ title: "آیتم جدید اضافه شد." });
-      setItemForm((prev) => createEmptyItemForm({ categoryId: prev.categoryId }));
+      toast({ title: isEditing ? "آیتم ویرایش شد." : "آیتم جدید اضافه شد." });
+      const preservedCategoryId = itemForm.categoryId;
+      resetItemForm(preservedCategoryId);
+      if (isEditing) {
+        setEditingItemId(null);
+      }
       await fetchMenu();
     } catch (error) {
       toast({
         title: "خطا",
-        description: error instanceof Error ? error.message : "ثبت آیتم ناموفق بود.",
+        description: error instanceof Error
+          ? error.message
+          : isEditing
+          ? "ویرایش آیتم ناموفق بود."
+          : "ثبت آیتم ناموفق بود.",
       });
     } finally {
-      setIsCreatingItem(false);
+      setIsSavingItem(false);
     }
   };
 
@@ -329,6 +374,9 @@ const AdminMenuManager = () => {
         throw new Error("حذف آیتم ناموفق بود.");
       }
       toast({ title: "آیتم حذف شد." });
+      if (editingItemId === itemId) {
+        handleCancelEdit();
+      }
       await fetchMenu();
     } catch (error) {
       toast({
@@ -469,7 +517,17 @@ const AdminMenuManager = () => {
           <CardTitle className="persian-text text-xl">افزودن محصول به منو</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleCreateItem}>
+          {editingItemId ? (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3">
+              <p className="persian-text text-sm font-medium text-primary">
+                در حال ویرایش: {itemForm.persianName || "محصول انتخاب‌شده"}
+              </p>
+              <Button type="button" variant="ghost" onClick={handleCancelEdit}>
+                لغو ویرایش
+              </Button>
+            </div>
+          ) : null}
+          <form className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSaveItem}>
             <div className="space-y-2">
               <label className="persian-text text-sm text-muted-foreground" htmlFor="persianName">
                 نام فارسی *
@@ -595,8 +653,8 @@ const AdminMenuManager = () => {
               </Button>
             </div>
             <div className="md:col-span-2">
-              <Button className="persian-text" type="submit" disabled={isCreatingItem}>
-                {isCreatingItem ? "در حال ثبت..." : "افزودن به منو"}
+              <Button className="persian-text" type="submit" disabled={isSavingItem}>
+                {isSavingItem ? "در حال ذخیره..." : editingItemId ? "ذخیره تغییرات" : "افزودن به منو"}
               </Button>
             </div>
           </form>
@@ -667,7 +725,14 @@ const AdminMenuManager = () => {
                           </div>
                         </div>
                         <Separator className="my-4" />
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSelectItemForEdit(item, category.id)}
+                          >
+                            ویرایش
+                          </Button>
                           <Button variant="destructive" size="sm" onClick={() => handleDeleteItem(item.id)}>
                             حذف
                           </Button>

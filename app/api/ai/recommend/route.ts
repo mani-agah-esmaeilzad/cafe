@@ -36,16 +36,34 @@ const buildMenuContext = (
     .join("\n\n");
 };
 
+type ClientMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export async function POST(request: NextRequest) {
   if (!process.env.GEMINI_API_KEY) {
     return NextResponse.json({ error: "کلید Gemini تنظیم نشده است." }, { status: 500 });
   }
 
-  const body = await request.json().catch(() => null) as { message?: string } | null;
-  const message = body?.message?.trim();
+  const body = await request.json().catch(() => null) as { messages?: ClientMessage[] } | null;
 
-  if (!message) {
-    return NextResponse.json({ error: "پیام کاربر خالی است." }, { status: 400 });
+  const messages = Array.isArray(body?.messages)
+    ? body!.messages
+        .map((message) => ({
+          role: message?.role === "assistant" ? "assistant" : "user",
+          content: typeof message?.content === "string" ? message.content.trim() : "",
+        }))
+        .filter((message) => message.content.length > 0)
+    : [];
+
+  if (!messages.length) {
+    return NextResponse.json({ error: "هیچ پیامی ارسال نشده است." }, { status: 400 });
+  }
+
+  const lastMessage = messages[messages.length - 1];
+  if (lastMessage.role !== "user") {
+    return NextResponse.json({ error: "آخرین پیام باید از طرف کاربر باشد." }, { status: 400 });
   }
 
   const categories = await prisma.menuCategory.findMany({
@@ -69,16 +87,29 @@ export async function POST(request: NextRequest) {
 
   const menuContext = buildMenuContext(categories);
 
-  const prompt = `تو نقش باریستای یک کافه ایرانی به نام «کافه ماین» را داری. بر اساس منوی زیر، به پرسش یا درخواست مشتری جواب بده. پیشنهادت را با لحن دوستانه فارسی بده و حتماً نام نوشیدنی‌های پیشنهادی را ذکر کن. اگر لازم بود توضیح بده چرا فکر می‌کنی آن نوشیدنی مناسب است. فقط از اطلاعات منوی زیر استفاده کن و اگر چیزی در منو نیست واضح بگو موجود نیست.\n\nمنو:\n${menuContext}`;
+  const prompt = `تو نقش باریستای یک کافه ایرانی به نام «کافه ماین» را داری. بر اساس منوی زیر، به پرسش یا درخواست مشتری جواب بده. پیشنهادت را با لحن دوستانه فارسی بده و حتماً نام نوشیدنی‌های پیشنهادی را ذکر کن. اگر لازم بود توضیح بده چرا فکر می‌کنی آن نوشیدنی مناسب است. فقط از اطلاعات منوی زیر استفاده کن و اگر چیزی در منو نیست واضح بگو موجود نیست. گفتگو را ادامه‌دار نگه دار و به آخرین پیام مشتری پاسخ بده.\n\nمنو:\n${menuContext}`;
 
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: modelName });
 
-    const result = await model.generateContent([
-      { text: prompt },
-      { text: `مشتری گفت: ${message}` },
-    ]);
+    const historyMessages = messages.slice(0, -1).map((message) => ({
+      role: message.role === "assistant" ? "model" : "user",
+      parts: [{ text: message.content }],
+    }));
+
+    const chat = model.startChat({
+      history: [
+        { role: "user", parts: [{ text: prompt }] },
+        {
+          role: "model",
+          parts: [{ text: "دریافت شد. فقط با اتکا به این منو به مشتری پاسخ می‌دهم." }],
+        },
+        ...historyMessages,
+      ],
+    });
+
+    const result = await chat.sendMessage(lastMessage.content);
 
     const responseText = result.response.text();
 

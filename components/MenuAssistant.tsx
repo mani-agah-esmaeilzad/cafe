@@ -23,7 +23,8 @@ const MenuAssistant = () => {
     if (!trimmed) return;
 
     const userMessage: Message = { role: "user", content: trimmed };
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput("");
     setIsLoading(true);
 
@@ -31,7 +32,7 @@ const MenuAssistant = () => {
       const response = await fetch("/api/ai/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({ messages: updatedMessages }),
       });
 
       if (!response.ok) {

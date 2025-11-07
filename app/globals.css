@@ -149,7 +149,9 @@
   }
 
   .price-badge {
-    background: var(--gradient-gold);
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
     transition: var(--transition-bounce);
   }
 

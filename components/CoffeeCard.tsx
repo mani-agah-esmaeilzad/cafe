@@ -63,7 +63,7 @@ const CoffeeCard = ({ image, persianName, englishName, options, description }: C
             </div>
 
             {description ? (
-              <p className="persian-text mt-3 text-xs leading-relaxed text-muted-foreground md:text-sm">
+              <p className="persian-text mt-3 text-right text-xs leading-relaxed text-muted-foreground md:text-sm">
                 {description}
               </p>
             ) : null}
