@@ -60,8 +60,8 @@ const AssistantIntroDialog = ({ onConfirm }: AssistantIntroDialogProps) => {
             <DialogTitle className="text-lg font-bold text-primary">باریستای هوشمند آماده‌ست</DialogTitle>
           </div>
           <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-            برای هر سوالی درباره منو، سلیقه‌ات یا انتخاب نوشیدنی، از باریستای هوشمند ماین کمک بگیر. پایین همین صفحه
-            بخش «گفتگو با باریستای هوشمند» منتظرته.
+            برای هر سوالی درباره منو، سلیقه‌ات یا انتخاب نوشیدنی، روی دکمه شناور پایینِ سمت راست بزن تا باریستای هوشمند
+            باز بشه و جواب بده.
           </DialogDescription>
         </DialogHeader>
         <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3 text-sm text-primary/90">

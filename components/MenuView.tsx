@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import CoffeeSidebar from "@/components/CoffeeSidebar";
 import CoffeeMenu from "@/components/CoffeeMenu";
-import MenuAssistant from "@/components/MenuAssistant";
 import AssistantIntroDialog from "@/components/AssistantIntroDialog";
+import FloatingAssistant from "@/components/FloatingAssistant";
 
 type MenuItemOption = {
   id: number;
@@ -35,10 +35,10 @@ type MenuViewProps = {
 
 const MenuView = ({ categories }: MenuViewProps) => {
   const [activeCategoryId, setActiveCategoryId] = useState<number | "all">("all");
-  const assistantSectionRef = useRef<HTMLDivElement | null>(null);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
-  const scrollToAssistant = () => {
-    assistantSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const openAssistant = () => {
+    setIsAssistantOpen(true);
   };
 
   const filteredCategories =
@@ -62,10 +62,8 @@ const MenuView = ({ categories }: MenuViewProps) => {
           <CoffeeMenu categories={filteredCategories} isFiltered={activeCategoryId !== "all"} />
         </div>
       </div>
-      <AssistantIntroDialog onConfirm={scrollToAssistant} />
-      <div ref={assistantSectionRef} className="w-full">
-        <MenuAssistant />
-      </div>
+      <AssistantIntroDialog onConfirm={openAssistant} />
+      <FloatingAssistant open={isAssistantOpen} onOpenChange={setIsAssistantOpen} />
     </div>
   );
 };
