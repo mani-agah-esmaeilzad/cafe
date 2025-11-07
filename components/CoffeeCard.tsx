@@ -21,22 +21,30 @@ const CoffeeCard = ({ image, persianName, englishName, options, description }: C
     <Card className="coffee-card border-0 bg-card shadow-sm transition-all duration-300 hover:shadow-md">
       <CardContent className="p-4 md:p-6">
         <div className="flex items-start gap-4">
-          <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-accent/10 md:h-24 md:w-24">
-            {image ? (
-              <Image
-                src={image}
-                alt={persianName}
-                className="h-full w-full object-cover"
-                loading="lazy"
-                width={96}
-                height={96}
-                sizes="(min-width: 768px) 96px, 80px"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-gold text-lg font-bold text-foreground">
-                {persianName.at(0)}
-              </div>
-            )}
+          <div className="flex w-24 flex-shrink-0 flex-col items-stretch gap-3 text-right md:w-28">
+            <div className="relative h-20 w-full overflow-hidden rounded-2xl border border-border bg-accent/10 md:h-24">
+              {image ? (
+                <Image
+                  src={image}
+                  alt={persianName}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  width={96}
+                  height={96}
+                  sizes="(min-width: 768px) 96px, 80px"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-gold text-lg font-bold text-foreground">
+                  {persianName.at(0)}
+                </div>
+              )}
+            </div>
+
+            {description ? (
+              <p className="persian-text text-right text-[11px] leading-relaxed text-muted-foreground md:text-xs">
+                {description}
+              </p>
+            ) : null}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -62,11 +70,6 @@ const CoffeeCard = ({ image, persianName, englishName, options, description }: C
               ) : null}
             </div>
 
-            {description ? (
-              <p className="persian-text mt-3 text-right text-xs leading-relaxed text-muted-foreground md:text-sm">
-                {description}
-              </p>
-            ) : null}
           </div>
         </div>
       </CardContent>
