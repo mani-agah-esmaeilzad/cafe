@@ -17,20 +17,23 @@ const CoffeeHero = () => {
             width={36}
             height={36}
             className="object-contain"
+            priority
           />
         </div>
       </header>
 
       {/* Hero section */}
-      <section
-        className="coffee-hero flex min-h-[16rem] items-center justify-center overflow-hidden text-white"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.5)), url(${HERO_BACKGROUND})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="container mx-auto px-4 py-10 text-center md:py-14">
+      <section className="relative flex min-h-[20rem] items-center justify-center overflow-hidden text-white md:min-h-[24rem]">
+        <Image
+          src={HERO_BACKGROUND}
+          alt="Mine Cafe Hero"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/60" />
+        <div className="relative container mx-auto px-4 py-10 text-center md:py-14">
           <h1 className="mb-2 text-3xl font-bold text-coffee-cream md:text-4xl">MINE</h1>
           <p className="mb-6 text-sm text-coffee-cream/80 md:text-lg">MINE IS YOURS</p>
           <div className="flex justify-center">
