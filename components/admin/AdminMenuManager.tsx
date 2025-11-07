@@ -627,7 +627,7 @@ const AdminMenuManager = () => {
                     />
                     <div className="flex items-center gap-2">
                       <Input
-                        placeholder="قیمت (ریال)"
+                        placeholder="قیمت (تومان)"
                         value={option.price}
                         inputMode="numeric"
                         dir="ltr"
@@ -715,7 +715,7 @@ const AdminMenuManager = () => {
                               <div className="flex flex-wrap gap-2">
                                 {item.options.map((option) => (
                                   <span key={option.id} className="price-badge rounded-full px-3 py-1 text-xs font-medium">
-                                    {option.label}: {option.price.toLocaleString("fa-IR")} ریال
+                                    {option.label}: {option.price.toLocaleString("fa-IR")} تومان
                                   </span>
                                 ))}
                               </div>

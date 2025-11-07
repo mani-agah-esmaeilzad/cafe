@@ -23,7 +23,7 @@ const buildMenuContext = (
       const items = category.items
         .map((item) => {
           const prices = item.options?.length
-            ? item.options.map((option) => `${option.label}: ${option.price.toLocaleString("fa-IR")} ریال`)
+            ? item.options.map((option) => `${option.label}: ${option.price.toLocaleString("fa-IR")} تومان`)
             : [];
           return `- ${item.persianName}${item.englishName ? ` (${item.englishName})` : ""}${
             prices.length ? ` | ${prices.join(" / ")}` : ""
