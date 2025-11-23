@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
+import { isDataUrl } from "@/lib/images";
 
 type PriceOptionDisplay = {
   label: string;
@@ -16,6 +17,7 @@ interface CoffeeCardProps {
 
 const CoffeeCard = ({ image, persianName, englishName, options, description }: CoffeeCardProps) => {
   const hasOptions = options && options.length > 0;
+  const isInlineImage = image ? isDataUrl(image) : false;
 
   return (
     <Card className="coffee-card group relative overflow-hidden border-0 bg-card/95 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
@@ -33,6 +35,7 @@ const CoffeeCard = ({ image, persianName, englishName, options, description }: C
                   width={160}
                   height={160}
                   sizes="(min-width: 768px) 160px, 100vw"
+                  unoptimized={isInlineImage}
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-gradient-gold text-2xl font-bold text-foreground">

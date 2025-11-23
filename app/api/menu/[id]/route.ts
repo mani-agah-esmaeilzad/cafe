@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getAdminFromRequest } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { imageUrlSchema } from "@/lib/validators";
 import { z } from "zod";
 
 const priceOptionSchema = z.object({
@@ -13,11 +14,11 @@ const updateSchema = z
     persianName: z.string().min(1).optional(),
     englishName: z.string().optional(),
     description: z.string().optional(),
-    imageUrl: z.string().url().or(z.literal("")).optional(),
+    imageUrl: imageUrlSchema,
     isAvailable: z.boolean().optional(),
     categoryId: z.number().int().positive().nullable().optional(),
     categoryName: z.string().min(1).optional(),
-    categoryImageUrl: z.string().url().or(z.literal("")).optional(),
+    categoryImageUrl: imageUrlSchema,
     priceOptions: z.array(priceOptionSchema).optional(),
   })
   .refine(
@@ -71,18 +72,21 @@ export async function PUT(request: NextRequest, context: any) {
 
   const data = parsed.data;
 
+  const normalizedImageUrl = data.imageUrl && data.imageUrl.trim() ? data.imageUrl : undefined;
+  const normalizedCategoryImageUrl =
+    data.categoryImageUrl && data.categoryImageUrl.trim() ? data.categoryImageUrl : undefined;
   let categoryId: number | null | undefined = data.categoryId ?? undefined;
   if (!categoryId && data.categoryName) {
     const category = await prisma.menuCategory.upsert({
       where: { name: data.categoryName },
-      update: data.categoryImageUrl ? { imageUrl: data.categoryImageUrl } : {},
-      create: { name: data.categoryName, imageUrl: data.categoryImageUrl },
+      update: normalizedCategoryImageUrl ? { imageUrl: normalizedCategoryImageUrl } : {},
+      create: { name: data.categoryName, imageUrl: normalizedCategoryImageUrl },
     });
     categoryId = category.id;
-  } else if (categoryId && data.categoryImageUrl) {
+  } else if (categoryId && normalizedCategoryImageUrl) {
     await prisma.menuCategory.update({
       where: { id: categoryId },
-      data: { imageUrl: data.categoryImageUrl },
+      data: { imageUrl: normalizedCategoryImageUrl },
     });
   }
 
@@ -91,7 +95,7 @@ export async function PUT(request: NextRequest, context: any) {
       persianName: data.persianName,
       englishName: data.englishName,
       description: data.description,
-      imageUrl: data.imageUrl,
+      imageUrl: normalizedImageUrl,
       isAvailable: data.isAvailable,
       categoryId: categoryId === undefined ? data.categoryId ?? undefined : categoryId,
     }).filter(([, value]) => value !== undefined)

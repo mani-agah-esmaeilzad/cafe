@@ -6,7 +6,7 @@ const COFFEE_LOGO = "/assets/images/android-chrome-192x192.png";
 
 const CoffeeFooter = () => {
   return (
-    <footer className="w-full bg-black py-8 text-white">
+    <footer id="contact-footer" className="w-full bg-black py-8 text-white">
       <div className="container mx-auto px-4 text-center">
         {/* Logo */}
         <div className="mb-8">
@@ -47,22 +47,23 @@ const CoffeeFooter = () => {
 
           {/* Action Buttons */}
           <div className="flex justify-center gap-3 pt-4">
-            <a 
-              href="https://maps.app.goo.gl/K7X7sTpGryTWTQJW8" 
-              target="_blank" 
-              rel="noopener noreferrer"
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="gap-2 border-coffee-cream bg-transparent text-coffee-cream hover:bg-coffee-cream hover:text-black"
             >
-              <Button variant="outline" size="sm" className="gap-2 border-coffee-cream bg-transparent text-coffee-cream hover:bg-coffee-cream hover:text-black">
+              <a href="https://maps.app.goo.gl/K7X7sTpGryTWTQJW8" target="_blank" rel="noopener noreferrer">
                 <Navigation className="h-4 w-4" />
                 مسیریابی
-              </Button>
-            </a>
-            <a href="tel:+989054291840">
-              <Button size="sm" className="gap-2 bg-coffee-cream text-black hover:bg-coffee-cream/80">
+              </a>
+            </Button>
+            <Button asChild size="sm" className="gap-2 bg-coffee-cream text-black hover:bg-coffee-cream/80">
+              <a href="tel:+989054291840">
                 <Phone className="h-4 w-4" />
                 تماس
-              </Button>
-            </a>
+              </a>
+            </Button>
           </div>
         </div>
 

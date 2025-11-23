@@ -47,7 +47,7 @@ const MenuView = ({ categories }: MenuViewProps) => {
       : categories.filter((category) => category.id === activeCategoryId);
 
   return (
-    <div className="space-y-6 px-3 pb-6 md:px-4 lg:px-6">
+    <div className="space-y-6 px-3 pb-28 md:px-4 md:pb-32 lg:px-6">
       <div className="flex w-full gap-4">
         <CoffeeSidebar
           categories={categories.map((category) => ({

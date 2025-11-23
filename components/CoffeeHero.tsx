@@ -29,10 +29,10 @@ const CoffeeHero = () => {
           alt="Mine Cafe Hero"
           fill
           priority
-          className="object-cover"
+          className="object-cover pointer-events-none"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/60" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/60" />
         <div className="relative container mx-auto px-4 py-10 text-center md:py-14">
           <h1 className="mb-2 text-3xl font-bold text-coffee-cream md:text-4xl">MINE</h1>
           <p className="mb-6 text-sm text-coffee-cream/80 md:text-lg">MINE IS YOURS</p>

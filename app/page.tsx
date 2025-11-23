@@ -49,6 +49,8 @@ const HomePage = () => {
             <div className="flex space-x-6 rtl:space-x-reverse">
               <a
                 href="https://www.instagram.com/_cafe.mine_?igsh=MXUydXhzOXRzaHpweQ=="
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-transparent flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition-all duration-300 hover:scale-110 hover:bg-white/70"
                 aria-label="اینستاگرام"
               >

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getAdminFromRequest } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { imageUrlSchema } from "@/lib/validators";
 import { z } from "zod";
 
 const priceOptionSchema = z.object({
@@ -15,11 +16,11 @@ const menuItemSchema = z.object({
   persianName: z.string().min(1, "نام فارسی الزامی است."),
   englishName: z.string().optional(),
   description: z.string().optional(),
-  imageUrl: z.string().url().or(z.literal("")).optional(),
+  imageUrl: imageUrlSchema,
   isAvailable: z.boolean().optional(),
   categoryId: z.number().int().positive().optional(),
   categoryName: z.string().min(1).optional(),
-  categoryImageUrl: z.string().url().or(z.literal("")).optional(),
+  categoryImageUrl: imageUrlSchema,
   priceOptions: z.array(priceOptionSchema).optional(),
 });
 
@@ -73,7 +74,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { categoryName, categoryId, categoryImageUrl, priceOptions, ...itemData } = parsed.data;
+  const { categoryName, categoryId, categoryImageUrl, priceOptions, imageUrl, ...restItemData } = parsed.data;
+  const normalizedImageUrl = imageUrl && imageUrl.trim() ? imageUrl : undefined;
+  const normalizedCategoryImageUrl =
+    categoryImageUrl && categoryImageUrl.trim() ? categoryImageUrl : undefined;
 
   if (!priceOptions || !priceOptions.length) {
     return NextResponse.json({ error: "حداقل یک گزینه قیمت‌گذاری الزامی است." }, { status: 400 });
@@ -84,20 +88,21 @@ export async function POST(request: NextRequest) {
   if (!resolvedCategoryId && categoryName) {
     const category = await prisma.menuCategory.upsert({
       where: { name: categoryName },
-      update: categoryImageUrl ? { imageUrl: categoryImageUrl } : {},
-      create: { name: categoryName, imageUrl: categoryImageUrl },
+      update: normalizedCategoryImageUrl ? { imageUrl: normalizedCategoryImageUrl } : {},
+      create: { name: categoryName, imageUrl: normalizedCategoryImageUrl },
     });
     resolvedCategoryId = category.id;
-  } else if (resolvedCategoryId && categoryImageUrl) {
+  } else if (resolvedCategoryId && normalizedCategoryImageUrl) {
     await prisma.menuCategory.update({
       where: { id: resolvedCategoryId },
-      data: { imageUrl: categoryImageUrl },
+      data: { imageUrl: normalizedCategoryImageUrl },
     });
   }
 
   const menuItem = await prisma.menuItem.create({
     data: {
-      ...itemData,
+      ...restItemData,
+      imageUrl: normalizedImageUrl,
       categoryId: resolvedCategoryId,
     },
   });

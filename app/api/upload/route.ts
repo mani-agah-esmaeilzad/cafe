@@ -1,6 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const EXTENSION_TO_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+};
+const MIME_TO_EXTENSION: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+const normalizeMimeType = (type?: string, extension?: string) => {
+  const normalizedType = type?.toLowerCase();
+  if (normalizedType && ALLOWED_MIME_TYPES.has(normalizedType)) {
+    return normalizedType;
+  }
+  const mapped = extension ? EXTENSION_TO_MIME[extension.toLowerCase()] : undefined;
+  return mapped ?? null;
+};
+
+const bufferToDataUrl = async (file: File, mimeType: string) => {
+  const arrayBuffer = await file.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString("base64");
+  return `data:${mimeType};base64,${base64}`;
+};
+
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
@@ -11,18 +43,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "فایل ارسال نشده است" }, { status: 400 });
   }
 
-  if (file.size > 5 * 1024 * 1024) {
+  if (file.size > MAX_FILE_SIZE_BYTES) {
     return NextResponse.json({ error: "حجم فایل باید کمتر از ۵ مگابایت باشد" }, { status: 413 });
   }
 
-  const fileExtension = file.name.split(".").pop();
-  const uniqueName = `menu/${Date.now()}-${Math.random().toString(16).slice(2)}.${fileExtension ?? "jpg"}`;
+  const fileExtension = file.name.includes(".") ? file.name.split(".").pop()?.toLowerCase() : undefined;
+  const mimeType = normalizeMimeType(file.type, fileExtension);
 
-  const blob = await put(uniqueName, file, {
-    access: "public",
-    addRandomSuffix: false,
-    contentType: file.type,
-  });
+  if (!mimeType) {
+    return NextResponse.json({ error: "فرمت فایل پشتیبانی نمی‌شود." }, { status: 415 });
+  }
 
-  return NextResponse.json({ url: blob.url });
+  const uniqueName = `menu/${Date.now()}-${Math.random().toString(16).slice(2)}.${fileExtension ?? MIME_TO_EXTENSION[mimeType] ?? "jpg"}`;
+  const hasBlobToken = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+
+  if (hasBlobToken) {
+    try {
+      const blob = await put(uniqueName, file, {
+        access: "public",
+        addRandomSuffix: false,
+        contentType: mimeType,
+      });
+      return NextResponse.json({ url: blob.url });
+    } catch (error) {
+      console.error("Vercel Blob upload failed, falling back to inline data URL", error);
+    }
+  }
+
+  const dataUrl = await bufferToDataUrl(file, mimeType);
+  return NextResponse.json({ url: dataUrl });
 }

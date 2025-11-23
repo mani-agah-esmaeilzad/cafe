@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { isDataUrl } from "@/lib/images";
 
 type MenuItemOption = {
   id: number;
@@ -444,6 +445,7 @@ const AdminMenuManager = () => {
                     width={80}
                     height={80}
                     className="h-full w-full object-cover"
+                    unoptimized={isDataUrl(categoryForm.imageUrl)}
                   />
                 </div>
               ) : null}
@@ -480,6 +482,7 @@ const AdminMenuManager = () => {
                               width={48}
                               height={48}
                               className="h-full w-full object-cover"
+                              unoptimized={isDataUrl(category.imageUrl)}
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
@@ -611,6 +614,7 @@ const AdminMenuManager = () => {
                     width={96}
                     height={96}
                     className="h-full w-full object-cover"
+                    unoptimized={isDataUrl(itemForm.imageUrl)}
                   />
                 </div>
               ) : null}
@@ -683,6 +687,7 @@ const AdminMenuManager = () => {
                           width={48}
                           height={48}
                           className="h-full w-full object-cover"
+                          unoptimized={isDataUrl(category.imageUrl)}
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">

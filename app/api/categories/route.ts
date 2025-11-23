@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminFromRequest } from "@/lib/auth";
+import { imageUrlSchema } from "@/lib/validators";
 import { z } from "zod";
 
 const categorySchema = z.object({
   name: z.string().min(1, "نام دسته‌بندی الزامی است."),
   description: z.string().optional(),
-  imageUrl: z.string().url().or(z.literal("")).optional(),
+  imageUrl: imageUrlSchema,
 });
 
 export async function GET() {
@@ -36,11 +37,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const normalizedImageUrl =
+      parsed.data.imageUrl && parsed.data.imageUrl.trim() ? parsed.data.imageUrl : undefined;
     const category = await prisma.menuCategory.create({
       data: {
         name: parsed.data.name.trim(),
         description: parsed.data.description?.trim() || null,
-        imageUrl: parsed.data.imageUrl || null,
+        imageUrl: normalizedImageUrl ?? null,
       },
     });
 
