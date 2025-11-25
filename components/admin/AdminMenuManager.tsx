@@ -75,6 +75,18 @@ const createEmptyCategoryForm = (): CategoryFormState => ({
   imageUrl: "",
 });
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const shouldRetryUpload = (error: unknown) => {
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return true;
+  }
+  if (error instanceof TypeError) {
+    return true;
+  }
+  return error instanceof Error && error.message === "Failed to fetch";
+};
+
 const AdminMenuManager = () => {
   const [itemForm, setItemForm] = useState<FormState>(createEmptyItemForm());
   const [categoryForm, setCategoryForm] = useState<CategoryFormState>(createEmptyCategoryForm());
@@ -184,21 +196,42 @@ const AdminMenuManager = () => {
       throw new Error("لطفاً فقط فایل تصویری انتخاب کنید.");
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const sendRequest = async () => {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.error ?? "آپلود تصویر ناموفق بود.");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "آپلود تصویر ناموفق بود.");
+      }
+
+      const { url } = (await response.json()) as { url: string };
+      return url;
+    };
+
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await sendRequest();
+      } catch (error) {
+        lastError = error;
+        if (attempt === 0 && shouldRetryUpload(error)) {
+          await sleep(300);
+          continue;
+        }
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error("آپلود تصویر ناموفق بود.");
+      }
     }
 
-    const { url } = (await response.json()) as { url: string };
-    return url;
+    throw lastError instanceof Error ? lastError : new Error("آپلود تصویر ناموفق بود.");
   };
 
   const handleItemImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
