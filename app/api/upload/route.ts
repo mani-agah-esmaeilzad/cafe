@@ -25,7 +25,7 @@ const MIME_ALIAS_TO_CANONICAL: Record<string, string> = {
 };
 
 const normalizeMimeType = (type?: string, extension?: string) => {
-  const normalizedType = type?.toLowerCase();
+  const normalizedType = type?.split(";")[0]?.trim().toLowerCase();
   const canonicalType = normalizedType ? MIME_ALIAS_TO_CANONICAL[normalizedType] ?? normalizedType : undefined;
   if (canonicalType && ALLOWED_MIME_TYPES.has(canonicalType)) {
     return canonicalType;
