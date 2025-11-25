@@ -7,6 +7,7 @@ const EXTENSION_TO_MIME: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
   png: "image/png",
+  apng: "image/png",
   webp: "image/webp",
   gif: "image/gif",
 };
@@ -16,11 +17,18 @@ const MIME_TO_EXTENSION: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif",
 };
+const MIME_ALIAS_TO_CANONICAL: Record<string, string> = {
+  "image/jpg": "image/jpeg",
+  "image/pjpeg": "image/jpeg",
+  "image/x-png": "image/png",
+  "image/apng": "image/png",
+};
 
 const normalizeMimeType = (type?: string, extension?: string) => {
   const normalizedType = type?.toLowerCase();
-  if (normalizedType && ALLOWED_MIME_TYPES.has(normalizedType)) {
-    return normalizedType;
+  const canonicalType = normalizedType ? MIME_ALIAS_TO_CANONICAL[normalizedType] ?? normalizedType : undefined;
+  if (canonicalType && ALLOWED_MIME_TYPES.has(canonicalType)) {
+    return canonicalType;
   }
   const mapped = extension ? EXTENSION_TO_MIME[extension.toLowerCase()] : undefined;
   return mapped ?? null;
