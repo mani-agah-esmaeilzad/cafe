@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 const MenuPage = async () => {
   const categories = await prisma.menuCategory.findMany({
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     include: {
       items: {
         where: { isAvailable: true },

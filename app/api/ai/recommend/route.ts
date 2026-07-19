@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   }
 
   const categories = await prisma.menuCategory.findMany({
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     include: {
       items: {
         where: { isAvailable: true },

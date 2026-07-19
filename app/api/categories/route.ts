@@ -12,7 +12,7 @@ const categorySchema = z.object({
 
 export async function GET() {
   const categories = await prisma.menuCategory.findMany({
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     include: {
       _count: {
         select: { items: true },
@@ -39,11 +39,16 @@ export async function POST(request: NextRequest) {
   try {
     const normalizedImageUrl =
       parsed.data.imageUrl && parsed.data.imageUrl.trim() ? parsed.data.imageUrl : undefined;
+    const lastCategory = await prisma.menuCategory.findFirst({
+      orderBy: [{ sortOrder: "desc" }, { createdAt: "desc" }],
+      select: { sortOrder: true },
+    });
     const category = await prisma.menuCategory.create({
       data: {
         name: parsed.data.name.trim(),
         description: parsed.data.description?.trim() || null,
         imageUrl: normalizedImageUrl ?? null,
+        sortOrder: (lastCategory?.sortOrder ?? -1) + 1,
       },
     });
 

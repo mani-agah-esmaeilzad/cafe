@@ -77,10 +77,18 @@ export async function PUT(request: NextRequest, context: any) {
     data.categoryImageUrl && data.categoryImageUrl.trim() ? data.categoryImageUrl : undefined;
   let categoryId: number | null | undefined = data.categoryId ?? undefined;
   if (!categoryId && data.categoryName) {
+    const lastCategory = await prisma.menuCategory.findFirst({
+      orderBy: [{ sortOrder: "desc" }, { createdAt: "desc" }],
+      select: { sortOrder: true },
+    });
     const category = await prisma.menuCategory.upsert({
       where: { name: data.categoryName },
       update: normalizedCategoryImageUrl ? { imageUrl: normalizedCategoryImageUrl } : {},
-      create: { name: data.categoryName, imageUrl: normalizedCategoryImageUrl },
+      create: {
+        name: data.categoryName,
+        imageUrl: normalizedCategoryImageUrl,
+        sortOrder: (lastCategory?.sortOrder ?? -1) + 1,
+      },
     });
     categoryId = category.id;
   } else if (categoryId && normalizedCategoryImageUrl) {

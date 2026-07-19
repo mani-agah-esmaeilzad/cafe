@@ -26,7 +26,7 @@ const menuItemSchema = z.object({
 
 export async function GET() {
   const menu = await prisma.menuCategory.findMany({
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     include: {
       items: {
         orderBy: { createdAt: "asc" },
@@ -86,10 +86,18 @@ export async function POST(request: NextRequest) {
   let resolvedCategoryId = categoryId;
 
   if (!resolvedCategoryId && categoryName) {
+    const lastCategory = await prisma.menuCategory.findFirst({
+      orderBy: [{ sortOrder: "desc" }, { createdAt: "desc" }],
+      select: { sortOrder: true },
+    });
     const category = await prisma.menuCategory.upsert({
       where: { name: categoryName },
       update: normalizedCategoryImageUrl ? { imageUrl: normalizedCategoryImageUrl } : {},
-      create: { name: categoryName, imageUrl: normalizedCategoryImageUrl },
+      create: {
+        name: categoryName,
+        imageUrl: normalizedCategoryImageUrl,
+        sortOrder: (lastCategory?.sortOrder ?? -1) + 1,
+      },
     });
     resolvedCategoryId = category.id;
   } else if (resolvedCategoryId && normalizedCategoryImageUrl) {

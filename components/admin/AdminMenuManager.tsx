@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +33,7 @@ type MenuCategory = {
   name: string;
   description?: string | null;
   imageUrl?: string | null;
+  sortOrder: number;
   items: MenuItem[];
 };
 
@@ -97,6 +99,7 @@ const AdminMenuManager = () => {
   const [isUploadingItemImage, setIsUploadingItemImage] = useState(false);
   const [isUploadingCategoryImage, setIsUploadingCategoryImage] = useState(false);
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
+  const [reorderingCategoryId, setReorderingCategoryId] = useState<number | null>(null);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const { toast } = useToast();
 
@@ -340,6 +343,47 @@ const AdminMenuManager = () => {
     }
   };
 
+  const handleMoveCategory = async (categoryId: number, direction: "up" | "down") => {
+    const currentIndex = categories.findIndex((category) => category.id === categoryId);
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= categories.length) {
+      return;
+    }
+
+    const nextCategories = [...categories];
+    [nextCategories[currentIndex], nextCategories[targetIndex]] = [
+      nextCategories[targetIndex],
+      nextCategories[currentIndex],
+    ];
+
+    setCategories(nextCategories);
+    setReorderingCategoryId(categoryId);
+
+    try {
+      const response = await fetch("/api/categories/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryIds: nextCategories.map((category) => category.id),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "ذخیره ترتیب دسته‌بندی‌ها ناموفق بود.");
+      }
+    } catch (error) {
+      setCategories(categories);
+      toast({
+        title: "خطا",
+        description: error instanceof Error ? error.message : "ذخیره ترتیب دسته‌بندی‌ها ناموفق بود.",
+      });
+    } finally {
+      setReorderingCategoryId(null);
+    }
+  };
+
   const handleSaveItem = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -497,14 +541,15 @@ const AdminMenuManager = () => {
             {categories.length === 0 ? (
               <p className="persian-text text-sm text-muted-foreground">هنوز دسته‌بندی‌ای ثبت نشده است.</p>
             ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                {categories.map((category) => {
+              <div className="space-y-3">
+                {categories.map((category, index) => {
                   const itemCount = category.items.length;
                   const isDeleting = deletingCategoryId === category.id;
+                  const isReordering = reorderingCategoryId !== null;
                   return (
                     <div
                       key={category.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card/60 p-3 shadow-sm"
+                      className="flex flex-col gap-3 rounded-xl border border-border bg-card/60 p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted/40">
@@ -525,17 +570,45 @@ const AdminMenuManager = () => {
                         </div>
                         <div>
                           <p className="persian-text text-sm font-semibold text-foreground">{category.name}</p>
-                          <p className="persian-text text-xs text-muted-foreground">{itemCount} محصول</p>
+                          <p className="persian-text text-xs text-muted-foreground">
+                            ترتیب {index + 1} · {itemCount} محصول
+                          </p>
                         </div>
                       </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={itemCount > 0 || isDeleting}
-                        onClick={() => handleDeleteCategory(category.id)}
-                      >
-                        {isDeleting ? "..." : "حذف"}
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={`انتقال ${category.name} به بالا`}
+                          title="انتقال به بالا"
+                          disabled={index === 0 || isReordering}
+                          onClick={() => handleMoveCategory(category.id, "up")}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={`انتقال ${category.name} به پایین`}
+                          title="انتقال به پایین"
+                          disabled={index === categories.length - 1 || isReordering}
+                          onClick={() => handleMoveCategory(category.id, "down")}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={itemCount > 0 || isDeleting}
+                          onClick={() => handleDeleteCategory(category.id)}
+                        >
+                          {isDeleting ? "..." : "حذف"}
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
