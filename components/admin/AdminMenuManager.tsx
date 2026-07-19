@@ -2,7 +2,6 @@
 
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -586,7 +585,9 @@ const AdminMenuManager = () => {
                           disabled={index === 0 || isReordering}
                           onClick={() => handleMoveCategory(category.id, "up")}
                         >
-                          <ArrowUp className="h-4 w-4" />
+                          <span className="text-lg leading-none" aria-hidden="true">
+                            ↑
+                          </span>
                         </Button>
                         <Button
                           type="button"
@@ -598,7 +599,9 @@ const AdminMenuManager = () => {
                           disabled={index === categories.length - 1 || isReordering}
                           onClick={() => handleMoveCategory(category.id, "down")}
                         >
-                          <ArrowDown className="h-4 w-4" />
+                          <span className="text-lg leading-none" aria-hidden="true">
+                            ↓
+                          </span>
                         </Button>
                         <Button
                           variant="destructive"
